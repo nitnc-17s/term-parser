@@ -1,11 +1,9 @@
 package pw._0x9.termparser
 
-import pprint.{Tree, Util}
+import pprint.{PPrinter, Tree, Util}
 
-import scala.annotation.switch
-
-object PPrint2 {
-  val pprint2 = pprint.copy(
+object Debug {
+  val PPrintUnicode: PPrinter = pprint.copy(
     additionalHandlers = {
       case x: String =>
         if (x.exists(c => c == '\n' || c == '\r')) Tree.Literal("\"\"\"" + x + "\"\"\"")
@@ -14,10 +12,12 @@ object PPrint2 {
   )
 }
 
+import scala.annotation.switch
+
 object Util2 {
   def escapeChar(c: Char,
-                 sb: StringBuilder,
-                 unicode: Boolean = false) = (c: @switch) match {
+    sb: StringBuilder,
+    unicode: Boolean = false) = (c: @switch) match {
     case '"' => sb.append("\\\"")
     case '\\' => sb.append("\\\\")
     case '\b' => sb.append("\\b")

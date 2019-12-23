@@ -1,91 +1,207 @@
 package pw._0x9.termparser
 
+import scala.util.matching.Regex
 import scala.util.parsing.combinator._
 
-sealed trait ChapterContent
-case class Chapter(number: Int, title: String, contents: List[ChapterContent])
-
-sealed trait SupplementaryProvisionsContent
-case class SupplementaryProvisions(contents: List[SupplementaryProvisionsContent]) {
-  val title = "附則"
+sealed trait RootContent {
+  def toHTML: String
 }
 
-sealed trait SectionContent
-case class Section(number: Int, title: String, contents: List[SectionContent]) extends ChapterContent
+case class Term(contents: List[TermContent]) extends RootContent {
+  override def toHTML: String = s"""<div class="term">${contents.map(x => x.toHTML).mkString}</div>"""
+}
+sealed trait TermContent {
+  def toHTML: String
+}
 
-sealed trait ArticleContent
-case class Article(number: Int, title: Option[String], contents: List[ArticleContent]) extends ChapterContent with SectionContent with SupplementaryProvisionsContent
+case class Chapter(number: Int, title: String, contents: List[ChapterContent]) extends TermContent {
+  private def id = s"c$number"
 
-sealed trait ParagraphContent
-case class Paragraph(number: Int, contents: List[ParagraphContent]) extends ArticleContent
-case class ParagraphText(text: String) extends ParagraphContent
+  override def toHTML: String = s"""<div id="$id" class="chapter"><h2>第${number}章 $title</h2>${contents.map(x => x.toHTML(number)).mkString}</div>"""
+}
+sealed trait ChapterContent {
+  def toHTML(chapter: Int): String
+}
 
-sealed trait OrderedListItemContent
-case class OrderedListItem(indentTimes: Int, number: Int, contents: List[OrderedListItemContent]) extends ParagraphContent
-case class OrderedListItemText(text: String) extends OrderedListItemContent
+case class SupplementaryProvisions(contents: List[SupplementaryProvisionsContent]) extends TermContent {
+  private val title = "附則"
+  private val number = -1
+
+  private def id = "sp"
+
+  override def toHTML: String = s"""<div id="$id" class="supplementary-provisions"><h2>$title</h2>${contents.map(x => x.toHTML(number)).mkString}</div>"""
+}
+sealed trait SupplementaryProvisionsContent {
+  def toHTML(chapter: Int): String
+}
+
+case class Section(number: Int, title: String, contents: List[SectionContent]) extends ChapterContent {
+  private def id(chapter: Int) = s"c${chapter}_s$number"
+
+  override def toHTML(chapter: Int): String = s"""<div id="${id(chapter)}" class="section"><h3>第${number}節 $title</h3>${contents.map(x => x.toHTML(chapter, number)).mkString}</div>"""
+}
+sealed trait SectionContent {
+  def toHTML(chapter: Int, section: Int): String
+}
+
+case class Article(number: Int, title: Option[String], contents: List[ArticleContent]) extends ChapterContent with SectionContent with SupplementaryProvisionsContent {
+  private def id(chapter: Int) = if (chapter == -1) s"spa$number" else s"a$number"
+
+  override def toHTML(chapter: Int): String = title match {
+    case Some(a) => s"""<div id="${id(chapter)}" class="article"><span class="article-title">($a)</span><h4>第${number}条</h4>${contents.map(x => x.toHTML(chapter, number)).mkString}</div>"""
+    case None => s"""<div id="${id(chapter)}" class="article"><h4>第${number}条</h4>${contents.map(x => x.toHTML(chapter, number)).mkString}</div>"""
+  }
+
+  override def toHTML(chapter: Int, section: Int): String = toHTML(chapter)
+}
+sealed trait ArticleContent {
+  def toHTML(chapter: Int, article: Int): String
+}
+
+case class Paragraph(number: Int, contents: List[ParagraphContent]) extends ArticleContent {
+  private val paragraphNumberHTML = if (number == 1) "" else s"<h5>$number</h5>"
+
+  private def id(chapter: Int, article: Int) = if (chapter == -1) s"spa${article}_$number" else s"a${article}_p$number"
+
+  override def toHTML(chapter: Int, article: Int): String = s"""<div id="${id(chapter, article)}" class="paragraph">$paragraphNumberHTML${contents.map(x => x.toHTML(article, number)).mkString}</div>"""
+}
+sealed trait ParagraphContent {
+  def toHTML(article: Int, paragraph: Int): String
+}
+case class ParagraphText(texts: List[Text]) extends ParagraphContent {
+  override def toHTML(article: Int, paragraph: Int): String = s"<p>${texts.map(x => x.toHTML(article: Int, paragraph: Int)).mkString}</p>"
+}
+
+sealed trait Text {
+  def toHTML(article: Int, paragraph: Int): String
+}
+case class ListText(texts: List[Text])
+case class PlainText(text: String) extends Text {
+  override def toHTML(article: Int, paragraph: Int): String = text
+}
+case class LinkText(text: String, target: LinkTarget) extends Text {
+  override def toHTML(article: Int, paragraph: Int): String = s"""<a data-scroll href="${target.toHTML(article, paragraph)}">$text</a>"""
+}
+
+sealed trait LinkTarget {
+  def toHTML(article: Int, paragraph: Int): String
+}
+case class LinkTargetArticle(article: Int) extends LinkTarget {
+  override def toHTML(article: Int, paragraph: Int): String = s"#a${this.article}"
+}
+case class LinkTargetParagraph(article: Option[Int], paragraph: Int) extends LinkTarget {
+  override def toHTML(article: Int, paragraph: Int): String = {
+    val p = if (this.paragraph == -1) paragraph - 1 else this.paragraph
+    this.article match {
+      case Some(a) => s"#a${a}_p$p"
+      case None => s"#a${article}_p$p"
+    }
+  }
+}
+
+case class OrderedList(indentLevel: Int, contents: List[OrderedListContent]) extends ParagraphContent with OrderedListItemContent {
+  override def toHTML(article: Int, paragraph: Int): String = s"""<ol class="ordered-list-type-$indentLevel">${contents.map(x => x.toHTML(article: Int, paragraph: Int)).mkString}</ol>"""
+}
+sealed trait OrderedListContent {
+  def toHTML(article: Int, paragraph: Int): String
+}
+
+case class OrderedListItem(number: Int, contents: List[OrderedListItemContent]) extends OrderedListContent {
+  override def toHTML(article: Int, paragraph: Int): String = s"""<li value="$number">${contents.map(x => x.toHTML(article: Int, paragraph: Int)).mkString}</li>"""
+}
+sealed trait OrderedListItemContent {
+  def toHTML(article: Int, paragraph: Int): String
+}
+case class OrderedListItemText(texts: List[Text]) extends OrderedListItemContent {
+  override def toHTML(article: Int, paragraph: Int): String = texts.map(x => x.toHTML(article: Int, paragraph: Int)).mkString
+}
 
 object TermParser extends RegexParsers {
   override val skipWhitespace = false
 
-  def eol = "\r".? <~ "\n"
-  def notSymbol = """[^!"#$%&'()*+\-.,/:;<=>?@\[\\\]^_`{|}~\t\n\r\f]+""".r
+  var indentSize = 4
 
-  def chapterNumber = "第" ~> """\d+""".r <~ "章" ^^ { _.toInt }
-  def chapterTitle = notSymbol
-  def chapterHead = (chapterNumber <~ " ") ~ (chapterTitle <~ eol.+)
-  def chapter = chapterHead ~ (section.+ | article.+) ^^ { result => Chapter(result._1._1, result._1._2, result._2) }
+  def eol: TermParser.Parser[String] = "\n" | "\r\n" | "\r"
+  def notSymbol: Regex = """[^!"#$%&'()*+\-.,/:;<=>?@\[\\\]^_`{|}~\t\n\r\f]+""".r
+  def parallelConjunctions: TermParser.Parser[String] = "、" | "及び"
 
-  def supplementaryProvisions = "附則" ~> article.+ ^^ { result => SupplementaryProvisions(result) }
+  def chapterNumber: TermParser.Parser[Int] = "第" ~> """\d+""".r <~ "章" ^^ { _.toInt }
+  def chapterTitle: Regex = notSymbol
+  def chapterHead: TermParser.Parser[Int ~ String] = (chapterNumber <~ " ") ~ (chapterTitle <~ rep1(eol))
+  def chapter: TermParser.Parser[Chapter] = chapterHead ~ (rep1(section) | rep1(article)) ^^ { result => Chapter(result._1._1, result._1._2, result._2) }
 
-  def sectionNumber = "第" ~> """\d+""".r <~ "節" ^^ { _.toInt }
-  def sectionTitle = notSymbol
-  def sectionHead = (sectionNumber <~ " ") ~ (sectionTitle <~ eol.+)
-  def section = sectionHead ~ article.+ ^^ { result => Section(result._1._1, result._1._2, result._2) }
+  def supplementaryProvisionsHead: TermParser.Parser[String] = "附則" <~ rep1(eol)
+  def supplementaryProvisions: TermParser.Parser[SupplementaryProvisions] = supplementaryProvisionsHead ~> rep1(article) ^^ { result => SupplementaryProvisions(result) }
 
-  def articleNumber = "第" ~> """\d+""".r <~ "条" ^^ { _.toInt }
-  def articleTitle = "(" ~> notSymbol <~ ")"
-  def articleHead = (articleTitle <~ eol).? ~ (articleNumber <~ eol)
-  def article = articleHead ~ paragraph.+ ^^ { result => Article(result._1._2, result._1._1, result._2) }
+  def sectionNumber: TermParser.Parser[Int] = "第" ~> """\d+""".r <~ "節" ^^ { _.toInt }
+  def sectionTitle: Regex = notSymbol
+  def sectionHead: TermParser.Parser[Int ~ String] = (sectionNumber <~ " ") ~ (sectionTitle <~ eol.+)
+  def section: TermParser.Parser[Section] = sectionHead ~ rep1(article) ^^ { result => Section(result._1._1, result._1._2, result._2) }
 
-  def paragraphNumber = """\d+""".r ^^ { result => if (result.isEmpty) 0 else result.toInt }
-  def paragraphContent = listItem | (".+".r ^^ { result => ParagraphText(result) })
-  def paragraph = not(chapterHead | sectionHead | articleHead) ~> (paragraphNumber <~ eol).? ~ repsep(paragraphContent, eol) <~ eol.+ ^^ {
+  def articleNumber: TermParser.Parser[Int] = "第" ~> """\d+""".r <~ "条" ^^ { _.toInt }
+  def articleTitle: TermParser.Parser[String] = "(" ~> notSymbol <~ ")"
+  def articleHead: TermParser.Parser[Option[String] ~ Int] = opt(articleTitle <~ eol) ~ (articleNumber <~ eol)
+  def article: TermParser.Parser[Article] = articleHead ~ rep1(paragraph) ^^ { result => Article(result._1._2, result._1._1, result._2) }
+
+  def paragraphNumber: TermParser.Parser[Int] = """\d+""".r ^^ { result => if (result.isEmpty) 0 else result.toInt }
+  def paragraphContent: TermParser.Parser[ParagraphContent] = orderedList() | (not(chapterHead | sectionHead | articleHead) ~> text ^^ { result => ParagraphText(result) })
+  def paragraph: TermParser.Parser[Paragraph] = not(articleHead | sectionHead | chapterHead | supplementaryProvisionsHead) ~> opt(paragraphNumber <~ eol) ~ rep1sep(paragraphContent, eol) <~ rep(eol) ^^ {
     case None~contents => Paragraph(1, contents)
     case Some(number)~contents => Paragraph(number, contents)
   }
 
-  def listItemNumber = "([一二三四五六七八九〇]|[イロハニホヘト])+".r ^^ { result => {
-    val numericCharacter = Map(
-      "一" -> 1,
-      "二" -> 2,
-      "三" -> 3,
-      "四" -> 4,
-      "五" -> 5,
-      "六" -> 6,
-      "七" -> 7,
-      "八" -> 8,
-      "九" -> 9,
-      "十" -> 10,
-      "イ" -> 1,
-      "ロ" -> 2,
-      "ハ" -> 3,
-      "ニ" -> 4,
-      "ホ" -> 5,
-      "ヘ" -> 6,
-      "ト" -> 7
-    )
-    numericCharacter.getOrElse(result, 0)
-  } }
-  def listItemContent: TermParser.Parser[OrderedListItemContent] = ".+".r ^^ { result => OrderedListItemText(result) }
-  def listItem = """ {4}""".r.+ ~ (listItemNumber <~ " ") ~ listItemContent ^^ {
-    result => OrderedListItem(result._1._1.length, result._1._2, List(result._2))
+  def orderedListItemNumber(indentLevel: Int): TermParser.Parser[Int] = indentLevel match {
+    case 1 => "[一二三四五六七八九十百千]+".r ^^ {
+      result => {
+        KanjiNumberParser.parse(result).getOrElse(0)
+      }
+    }
+    /* イロハ順のニを漢数字にしている誤記があるためそれに対応 */
+    case 2 => "([イロハニホヘトチリヌルヲワカヨタレソツネナラムウヰノオクヤマケフコエテアサキユメミシヱヒモセスン]|二)".r ^^ {
+      result => {
+        if (result == "二") 4
+        else {
+          val iroha = "イロハニホヘトチリヌルヲワカヨタレソツネナラムウヰノオクヤマケフコエテアサキユメミシヱヒモセスン".split("").zipWithIndex.toMap
+          iroha.getOrElse(result, -1) + 1
+        }
+      }
+    }
+  }
+  def orderedListItemText(indentLevel: Int): TermParser.Parser[OrderedListItemText] = not(repN(indentLevel * indentSize, " ".r)) ~> text ^^ { result => OrderedListItemText(result) }
+  def orderedListItemContent(indentLevel: Int): TermParser.Parser[List[OrderedListItemContent]] = rep1sep(orderedList(indentLevel + 1) | orderedListItemText(indentLevel), eol) <~ opt(eol)
+  def orderedListItem(indentLevel: Int): TermParser.Parser[OrderedListItem] = (orderedListItemNumber(indentLevel) <~ " ".r) ~ orderedListItemContent(indentLevel) ^^ {
+    result => OrderedListItem(result._1, result._2)
   }
 
-  def term = eol.? ~> (supplementaryProvisions | chapter).+
+  def orderedList(indentLevel: Int = 1): TermParser.Parser[OrderedList] = rep1(repN(indentLevel * indentSize, " ".r) ~> orderedListItem(indentLevel) <~ opt(eol)) ^^ { result => OrderedList(indentLevel, result) }
 
-  def parse(input: String) = parseAll(term, input)
-  def apply(input: String) = parse(input) match {
-    case Success(data, next) => Right(data)
-    case NoSuccess(errorMessage, next) => Left(s"$errorMessage on line ${next.pos.line} on column ${next.pos.column}")
+  def plainText: TermParser.Parser[PlainText] = rep1(not(linkText) ~> ".".r) ^^ { result => PlainText(result.mkString) }
+  def anotherArticleParagraph: TermParser.Parser[LinkText] = ("第" ~> """\d+""".r <~ "条") ~ ("第" ~> """\d+""".r <~ "項") ^^ {
+    result => LinkText(s"第${result._1.toInt}条第${result._2.toInt}項", LinkTargetParagraph(Some(result._1.toInt), result._2.toInt))
+  }
+  def anotherArticleParagraphs: TermParser.Parser[ListText] = ("第" ~> """\d+""".r <~ "条") ~ ("第" ~> """\d+""".r <~ "項") ~ rep1(parallelConjunctions ~ ("第" ~> """\d+""".r <~ "項")) ^^ {
+    result => ListText(List(LinkText(s"第${result._1._1.toInt}条第${result._1._2.toInt}項", LinkTargetParagraph(Some(result._1._1.toInt), result._1._2.toInt))) ++ result._2.flatMap(x => {
+      List(LinkText(s"第${x._2.toInt}項", LinkTargetParagraph(Some(result._1._1.toInt), x._2.toInt)), PlainText(x._1))
+    }))
+  }
+  def sameArticleParagraph: TermParser.Parser[LinkText] = "第" ~> """\d+""".r <~ "項" ^^ { result => LinkText(s"第${result.toInt}項", LinkTargetParagraph(None, result.toInt)) }
+  def precedingParagraph: TermParser.Parser[LinkText] = "前項" ^^ { _ => LinkText("前項", LinkTargetParagraph(None, -1)) }
+  def anotherArticle: TermParser.Parser[LinkText] = "第" ~> """\d+""".r <~ "条" ^^ { result => LinkText(s"第${result.toInt}条", LinkTargetArticle(result.toInt)) }
+  def linkTexts: TermParser.Parser[ListText] = anotherArticleParagraphs
+  def linkText: TermParser.Parser[LinkText] = anotherArticleParagraph | sameArticleParagraph | precedingParagraph | anotherArticle
+  def text: TermParser.Parser[List[Text]] = rep1(linkTexts | linkText | plainText) ^^ { result => result.flatMap({
+    case ListText(x) => x
+    case x: Text => List(x)
+  }) }
+
+  def term: TermParser.Parser[Term] = rep(eol) ~> rep1(supplementaryProvisions | chapter) ^^ { result => Term(result) }
+
+  def parse(input: String): TermParser.ParseResult[Term] = parseAll(term, input)
+  def apply(input: String, indentSize: Int = 4): Either[String, Term] = {
+    this.indentSize = indentSize
+    parse(input) match {
+      case Success(data, _) => Right(data)
+      case NoSuccess(errorMessage, next) => Left(s"$errorMessage on line ${next.pos.line} on column ${next.pos.column}")
+    }
   }
 }
