@@ -148,6 +148,6 @@ ${contents}
 ```
 ${indent}${n} ${contents}
 ```
-- ${indent}: インデント (default: 4)
-- ${n}: アイテムの番号 深さによって使う文字種が異なる (depth: {1: "漢数字", 2: "イロハ"})
-- ${contents}: アイテムの内容 (type: List[OrderedList | Text])
+- `${indent}`: インデント (default: 4)
+- `${n}`: アイテムの番号 深さによって使う文字種が異なる (depth: {1: "漢数字", 2: "イロハ"})
+- `${contents}`: アイテムの内容 (type: List[OrderedList | Text])
