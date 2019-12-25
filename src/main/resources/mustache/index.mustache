@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>{{title}}</title>
+  {{#cdn_styles}}
+  <link href="{{.}}" rel="stylesheet">
+  {{/cdn_styles}}
+</head>
+<body>
+  <h1>{{title}}</h1>
+  {{{body}}}
+
+  {{#cdn_scripts}}
+  <script src="{{.}}"></script>
+  {{/cdn_scripts}}
+</body>
+</html>

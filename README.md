@@ -3,18 +3,20 @@
 
 ## 使い方
 ```
-term-parser 1.0.0 by LaFr4nc3
+term-parser 1.1.0 by LaFr4nc3
 Usage: term-parser [options] [<source>] [<target>]
 
+  -v, --version
   -h, --help             このヘルプを表示
+  -S, --use-std          標準入出力を使用する
   -t, --title <value>    パース結果のHTMLで利用するタイトル
   --indent-size <value>  リストのパース時に使うインデントのサイズ (default: 4)
-  <source>               パース対象のファイル (e.g. terms.txt)
-  <target>               パース結果の出力ファイル (e.g. terms.html)
+  <source>               パース対象のファイル (default: terms.txt)
+  <target>               パース結果の出力ファイル (default: terms.html)
 ```
 
 標準入力および標準出力に対応しています。
-1行で出力されるので、別途整形ツールなどをお使いください。
+一部1行で出力されるので、別途整形ツールなどをお使いください。
 
 不明な点がありましたら、LaFr4nc3までご連絡ください。
 
