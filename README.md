@@ -3,7 +3,7 @@
 
 ## 使い方
 ```
-term-parser 1.1.0 by LaFr4nc3
+term-parser 1.2.1 by LaFr4nc3
 Usage: term-parser [options] [<source>] [<target>]
 
   -v, --version
