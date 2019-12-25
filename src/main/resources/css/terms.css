@@ -1,0 +1,55 @@
+@import url('https://fonts.googleapis.com/css?family=Noto+Serif+JP&display=swap');
+
+html {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 18px;
+  -webkit-text-size-adjust: auto;
+}
+body {
+  padding: 2em 10vw;
+}
+
+header {
+  position: fixed;
+  width: 100vw;
+  padding: 0.1em 0;
+  top: 0;
+  left: 0;
+  background-color: #FFF;
+  text-align: center;
+  border-bottom: solid 2px black;
+  font-weight: bold;
+  -webkit-text-size-adjust: 200%;
+}
+header span {
+  display: none;
+}
+header span:not(:first-child)::before {
+  content: " / ";
+}
+
+.article h4 {
+  margin: 0;
+}
+.article .article-title {
+  font-weight: bold;
+}
+
+.paragraph h5 {
+  margin: 0;
+}
+.paragraph p {
+  margin-top: 0;
+  margin-bottom: 1em;
+}
+
+ol.ordered-list-type-1 {
+  list-style-type: cjk-ideographic;
+}
+ol.ordered-list-type-2 {
+  list-style-type: katakana-iroha;
+}
+
+.link-target, .article:target, .paragraph:target {
+  background-color: #FFC;
+}

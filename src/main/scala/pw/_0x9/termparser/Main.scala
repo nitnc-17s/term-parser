@@ -85,11 +85,11 @@ object Main {
               "title" -> args.title,
               "cdn_styles" -> List(
                 "https://cdn.jsdelivr.net/npm/normalize-css@2.3.1/normalize.css",
-                "https://gist.githack.com/LaFr4nc3/8c20a737bbe5baad44d2e4d964086d96/raw/5be708bf904584480cbb6501d76a9a2cf3e25c23/terms.css"
+                "https://cdn.jsdelivr.net/gh/nitnc-17s/term-parser/src/main/resources/css/terms.css"
               ),
               "cdn_scripts" -> List(
                 "https://cdn.jsdelivr.net/gh/cferdinandi/smooth-scroll@15/dist/smooth-scroll.polyfills.min.js",
-                "https://gist.githack.com/LaFr4nc3/8c20a737bbe5baad44d2e4d964086d96/raw/5be708bf904584480cbb6501d76a9a2cf3e25c23/terms.js"
+                "https://cdn.jsdelivr.net/gh/nitnc-17s/term-parser/src/main/resources/js/terms.js"
               ),
               "body" -> term.toHTML
             )
