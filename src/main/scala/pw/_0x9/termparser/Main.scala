@@ -4,6 +4,7 @@ import better.files._
 import java.io.{File => JFile}
 import java.nio.charset.{Charset, StandardCharsets}
 
+import com.typesafe.config.ConfigFactory
 import org.fusesource.scalate._
 import scopt.OParser
 
@@ -19,13 +20,15 @@ object Main {
     debug: Boolean = false
   )
   def main(args: Array[String]): Unit = {
+    val conf = ConfigFactory.load
+    val versionString = try { conf.getString("version") } catch { case _: Exception => "" }
     val pipeInputAvailable = try { System.in.available() != 0 } catch { case _: Exception => false }
     val argsBuilder = OParser.builder[CommandLineArgs]
     val argsParser = {
       import argsBuilder._
       OParser.sequence(
         programName("term-parser"),
-        head("term-parser", "1.1.0", "by LaFr4nc3"),
+        head("term-parser", versionString, "by LaFr4nc3"),
         version('v', "version"),
         help('h', "help")
           .text("このヘルプを表示"),
@@ -82,11 +85,11 @@ object Main {
               "title" -> args.title,
               "cdn_styles" -> List(
                 "https://cdn.jsdelivr.net/npm/normalize-css@2.3.1/normalize.css",
-                "https://gist.githack.com/LaFr4nc3/8c20a737bbe5baad44d2e4d964086d96/raw/2c5cd52768ac589e5a42073571ce3fe7713dc27d/terms.css"
+                "https://gist.githack.com/LaFr4nc3/8c20a737bbe5baad44d2e4d964086d96/raw/5be708bf904584480cbb6501d76a9a2cf3e25c23/terms.css"
               ),
               "cdn_scripts" -> List(
                 "https://cdn.jsdelivr.net/gh/cferdinandi/smooth-scroll@15/dist/smooth-scroll.polyfills.min.js",
-                "https://gist.githack.com/LaFr4nc3/8c20a737bbe5baad44d2e4d964086d96/raw/2c5cd52768ac589e5a42073571ce3fe7713dc27d/smooth-scroll-config.js"
+                "https://gist.githack.com/LaFr4nc3/8c20a737bbe5baad44d2e4d964086d96/raw/5be708bf904584480cbb6501d76a9a2cf3e25c23/terms.js"
               ),
               "body" -> term.toHTML
             )
