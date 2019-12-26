@@ -25,7 +25,12 @@ header span {
   display: none;
 }
 header span:not(:first-child)::before {
-  content: " / ";
+  content: ' / ';
+}
+
+.header-anchor {
+  color: black;
+  text-decoration: none;
 }
 
 .article h4 {
