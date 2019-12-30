@@ -3,7 +3,7 @@
 
 ## 使い方
 ```
-term-parser 1.2.1 by LaFr4nc3
+term-parser 1.3.0 by LaFr4nc3
 Usage: term-parser [options] [<source>] [<target>]
 
   -v, --version
@@ -16,7 +16,7 @@ Usage: term-parser [options] [<source>] [<target>]
 ```
 
 標準入力および標準出力に対応しています。
-一部1行で出力されるので、別途整形ツールなどをお使いください。
+HTMLは整形されて出力されます。
 
 不明な点がありましたら、LaFr4nc3までご連絡ください。
 

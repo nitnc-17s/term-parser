@@ -6,6 +6,7 @@ import java.nio.charset.{Charset, StandardCharsets}
 
 import com.typesafe.config.ConfigFactory
 import org.fusesource.scalate._
+import org.jsoup.Jsoup
 import scopt.OParser
 
 import scala.io.Source
@@ -81,6 +82,8 @@ object Main {
         res match {
           case Right(term) =>
             val engine = new TemplateEngine
+            val bodyDoc = Jsoup.parseBodyFragment(term.toHTML)
+            bodyDoc.outputSettings().indentAmount(2)
             val bindings = Map(
               "title" -> args.title,
               "cdn_styles" -> List(
@@ -91,10 +94,11 @@ object Main {
                 "https://cdn.jsdelivr.net/gh/cferdinandi/smooth-scroll@15/dist/smooth-scroll.polyfills.min.js",
                 "https://cdn.jsdelivr.net/gh/nitnc-17s/term-parser/src/main/resources/js/terms.js"
               ),
-              "body" -> term.toHTML
+              "body" -> bodyDoc.body().html().split("\n").map(x => "  " + x).mkString("\n")
             )
             val templateUri = File(getClass.getResource("/mustache/index.mustache")).pathAsString
-            val outputText = engine.layout(templateUri, bindings)
+            val outputDoc = engine.layout(templateUri, bindings)
+            val outputText = outputDoc
             if (args.useStd) {
               println(outputText)
             } else {

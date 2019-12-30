@@ -6,16 +6,15 @@ const scroll = new SmoothScroll('a[href*="#"]', {
   emitEvents: true
 })
 
-let prevTarget
+let prevEvent
 document.addEventListener(
   "scrollStart",
   event => {
-    if (prevTarget !== undefined) {
-      prevTarget.classList.remove("link-target")
+    if (prevEvent !== undefined) {
+      prevEvent.detail.anchor.classList.remove("link-target")
     }
-    const target = event.detail.anchor
-    target.classList.add("link-target")
-    prevTarget = target
+    event.detail.anchor.classList.add("link-target")
+    prevEvent = event
   },
   false
 )
